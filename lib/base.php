@@ -431,20 +431,10 @@ class OC {
 			//show the user a detailed error page
 			OC_Response::setStatus(OC_Response::STATUS_INTERNAL_SERVER_ERROR);
 			OC_Template::printExceptionErrorPage($e);
+			die();
 		}
 
 		$sessionLifeTime = self::getSessionLifeTime();
-		// regenerate session id periodically to avoid session fixation
-		/**
-		 * @var \OCP\ISession $session
-		 */
-		$session = self::$server->getSession();
-		if (!$session->exists('SID_CREATED')) {
-			$session->set('SID_CREATED', time());
-		} else if (time() - $session->get('SID_CREATED') > $sessionLifeTime / 2) {
-			$session->regenerateId();
-			$session->set('SID_CREATED', time());
-		}
 
 		// session timeout
 		if ($session->exists('LAST_ACTIVITY') && (time() - $session->get('LAST_ACTIVITY') > $sessionLifeTime)) {
@@ -452,9 +442,7 @@ class OC {
 				setcookie(session_name(), null, -1, self::$WEBROOT ? : '/');
 				unset($_COOKIE[session_name()]);
 			}
-			session_unset();
-			session_destroy();
-			session_start();
+			$session->clear();
 		}
 
 		$session->set('LAST_ACTIVITY', time());
